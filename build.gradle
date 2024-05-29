@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+}
+
+group = 'dk.martinersej'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name = "jitpack"
+        url = "https://jitpack.io"
+    }
+}
+configurations {
+    provided
+}
+dependencies {
+    compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
+    compileOnly("dk.martinersej:CoinSystem:1.0-SNAPSHOT")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+}
+
+def targetJavaVersion = 8
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release = targetJavaVersion
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties(props)
+    inputs.property('file.encoding', 'UTF-8') // Set the encoding
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
