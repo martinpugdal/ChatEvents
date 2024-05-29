@@ -1,6 +1,8 @@
 package dk.martinersej.chatevents.events;
 
-import dk.martinersej.chatevents.ChatEvent;
+import dk.martinersej.chatevents.hooks.CoinsHook;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -16,73 +18,61 @@ import java.util.List;
 
 public class TypeItFirstEvent extends BukkitRunnable implements IEvent {
 
-    private final JavaPlugin plugin;
     private BukkitTask cooldown;
     private String word;
 
-    public TypeItFirstEvent(JavaPlugin plugin) {
-        this.plugin = plugin;
-    }
-
     public BukkitRunnable c() {
-        return new TypeItFirstEvent(plugin);
+        return new TypeItFirstEvent();
     }
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
         if (event.getMessage().equalsIgnoreCase(word)) {
             winnerFound(event.getPlayer());
-            startNextRound();
         }
     }
 
     public void winnerFound(Player player) {
         cooldown.cancel();
-        plugin.getServer().broadcastMessage(player.getName() + " gættede ordet!");
+        Bukkit.getServer().broadcastMessage(player.getName() + " gættede ordet!");
+        double randomCoins = Math.random() * 75 + 25; // 25-100
+        CoinsHook.addCoins(player, randomCoins);
     }
 
     public void sendNoOneGuessed() {
-
+        Bukkit.getServer().broadcastMessage("Ingen kunne skrive ordet først: " + word);
     }
 
     public BukkitTask startCountdown() {
         return new BukkitRunnable() {
-            int time = 15;
+            int time = getCooldownTime();
 
             @Override
             public void run() {
                 if (time == 0) {
                     cancel();
                     sendNoOneGuessed();
-                    startNextRound();
                     return;
                 }
                 time--;
             }
 
-        }.runTaskTimer(plugin, 0, 20);
-    }
-
-    public void startNextRound() {
-        try {
-            cancel();
-        } catch (IllegalStateException ignored) {}
-        ChatEvent.get().getTypeItFirstTask().c().runTaskLaterAsynchronously(plugin, 20 * 10); // 5 minutes
+        }.runTaskTimer(JavaPlugin.getProvidingPlugin(getClass()), 0, 20);
     }
 
     public void start() {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        Bukkit.getServer().getPluginManager().registerEvents(this, JavaPlugin.getProvidingPlugin(getClass()));
         newWord();
     }
 
     private void newWord() {
         List<String> words = new ArrayList<>(Arrays.asList(
-                "hej",
-                "med",
-                "dig",
-                "martin",
-                "er",
-                "sej"
+            "hej",
+            "med",
+            "dig",
+            "martin",
+            "er",
+            "sej"
         ));
         Collections.shuffle(words);
         word = words.get(0);
@@ -91,12 +81,12 @@ public class TypeItFirstEvent extends BukkitRunnable implements IEvent {
     @Override
     public void run() {
         start();
-        plugin.getServer().broadcastMessage("Skriv ordet først: " + word);
+        Bukkit.getServer().broadcastMessage("Skriv ordet først: " + word);
         cooldown = startCountdown();
     }
 
     public void stop() {
-        plugin.getServer().broadcastMessage("TypeItFirstEvent stopped");
+        Bukkit.getServer().broadcastMessage("TypeItFirstEvent stopped");
         cancel();
     }
 
@@ -107,5 +97,10 @@ public class TypeItFirstEvent extends BukkitRunnable implements IEvent {
             cooldown.cancel();
         }
         super.cancel();
+    }
+
+    @Override
+    public int getCooldownTime() {
+        return 0;
     }
 }

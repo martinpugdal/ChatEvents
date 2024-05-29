@@ -1,24 +1,25 @@
 package dk.martinersej.chatevents;
 
-import dk.martinersej.chatevents.commands.TypeItFirstEventCommand;
-import dk.martinersej.chatevents.commands.ScrambleEventCommand;
+import dk.martinersej.chatevents.events.IEvent;
 import dk.martinersej.chatevents.events.MathEvent;
 import dk.martinersej.chatevents.events.TypeItFirstEvent;
-import dk.martinersej.chatevents.managers.yaml.ConfigManager;
 import dk.martinersej.chatevents.events.ScrambleEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class ChatEvent extends JavaPlugin {
 
     private static ChatEvent instance;
-    private ConfigManager configManager;
-    private ScrambleEvent scrambleEvent;
-    private TypeItFirstEvent typeItFirstEvent;
-    private MathEvent mathEvent;
+    private IEvent event;
 
     public static ChatEvent get() {
         return instance;
+    }
+
+    public IEvent getEvent() {
+        return event;
     }
 
     @Override
@@ -26,26 +27,30 @@ public final class ChatEvent extends JavaPlugin {
         // Plugin startup logic
         instance = this;
 
-//        configManager = new ConfigManager(this, "config.yml"); // FUCK DIG DIN DUMME LINJE
-
-
-        registerCommands();
-        registerEvents();
-        registerTasks();
+        startRandomEvent();
     }
 
-    private void registerTasks() {
-//        getTypeItFirstTask().startNextRound();
-//        getScrambleTask().startNextRound();
-        getMathTask().startNextRound();
-    }
-
-    private void registerEvents() {
-    }
-
-    private void registerCommands() {
-        TypeItFirstEventCommand.register(this);
-        ScrambleEventCommand.register(this);
+    private void startRandomEvent() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (event != null) {
+                    event.cancel();
+                }
+                int random = (int) (Math.random() * 3);
+                switch (random) {
+                    case 0:
+                        event = new ScrambleEvent();
+                        break;
+                    case 1:
+                        event = new TypeItFirstEvent();
+                        break;
+                    case 2:
+                        event = new MathEvent();
+                        break;
+                }
+            }
+        }.runTaskTimer(this, 0, 20 * 15);
     }
 
     @Override
@@ -53,30 +58,5 @@ public final class ChatEvent extends JavaPlugin {
         for (BukkitTask task : getServer().getScheduler().getPendingTasks()) {
             task.cancel();
         }
-    }
-
-    public ConfigManager getConfigManager() {
-        return configManager;
-    }
-
-    public ScrambleEvent getScrambleTask() {
-        if (scrambleEvent == null) {
-            scrambleEvent = new ScrambleEvent(this);
-        }
-        return scrambleEvent;
-    }
-
-    public TypeItFirstEvent getTypeItFirstTask() {
-        if (typeItFirstEvent == null) {
-            typeItFirstEvent = new TypeItFirstEvent(this);
-        }
-        return typeItFirstEvent;
-    }
-    
-    public MathEvent getMathTask() {
-        if (mathEvent == null) {
-            mathEvent = new MathEvent(this);
-        }
-        return mathEvent;
     }
 }

@@ -1,6 +1,8 @@
 package dk.martinersej.chatevents.events;
 
 import dk.martinersej.chatevents.ChatEvent;
+import dk.martinersej.chatevents.hooks.CoinsHook;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -16,18 +18,15 @@ import java.util.Random;
 
 public class MathEvent extends BukkitRunnable implements IEvent {
 
-    private final JavaPlugin plugin;
     private final Random random = new Random();
     private BukkitTask cooldown;
     private String mathExpression;
     private String mathResult;
-
-    public MathEvent(JavaPlugin plugin) {
-        this.plugin = plugin;
-    }
+    private Level level;
 
     private void newSolution() {
-        String expression = generateExpression(Level.values()[random.nextInt(Level.values().length)]);
+        level = Level.values()[random.nextInt(Level.values().length)];
+        String expression = generateExpression();
         String result = calculate(expression);
         saveMathResult(expression, result);
     }
@@ -115,7 +114,7 @@ public class MathEvent extends BukkitRunnable implements IEvent {
         }
     }
 
-    private String generateExpression(Level level) {
+    private String generateExpression() {
         List<CharSequence> operators = new ArrayList<>(Arrays.asList("+", "-", "*", "/"));
         int numberOfNumbers;
         StringBuilder expression = new StringBuilder();
@@ -162,64 +161,56 @@ public class MathEvent extends BukkitRunnable implements IEvent {
     public void onChat(AsyncPlayerChatEvent event) {
         if (event.getMessage().equalsIgnoreCase(mathResult)) {
             winnerFound(event.getPlayer());
-            startNextRound();
         }
     }
 
     public void winnerFound(Player player) {
         cooldown.cancel();
-        plugin.getServer().broadcastMessage(player.getName() + " gættede tallet!");
+        Bukkit.getServer().broadcastMessage(player.getName() + " gættede tallet!");
+        double randomCoins = Math.random() * 75 + 25 * Math.max(level.ordinal(), 1); // 25-100 * level
+        CoinsHook.addCoins(player, randomCoins);
     }
 
     @Override
     public void run() {
         start();
-        plugin.getServer().broadcastMessage("Regn ud: " + mathExpression);
+        Bukkit.getServer().broadcastMessage("Regn ud: " + mathExpression);
         cooldown = startCountdown();
     }
 
     public BukkitTask startCountdown() {
         return new BukkitRunnable() {
-            int time = 10;
+            int time = getCooldownTime();
 
             @Override
             public void run() {
                 if (time == 0) {
                     cancel();
                     sendNoOneGuessed();
-                    startNextRound();
                     return;
                 }
                 time--;
             }
 
-        }.runTaskTimer(plugin, 0, 20);
-    }
-
-    public void startNextRound() {
-        try {
-            cancel();
-        } catch (IllegalStateException ignored) {
-        }
-        ChatEvent.get().getMathTask().c().runTaskLaterAsynchronously(plugin, 20); // 5 minutes
+        }.runTaskTimer(JavaPlugin.getProvidingPlugin(getClass()), 0, 20);
     }
 
     public BukkitRunnable c() {
-        return new MathEvent(plugin);
+        return new MathEvent();
     }
 
     public void sendNoOneGuessed() {
-        plugin.getServer().broadcastMessage("Ingen gættede svaret!");
-        plugin.getServer().broadcastMessage("svaret var: " + mathResult);
+        Bukkit.getServer().broadcastMessage("Ingen gættede svaret!");
+        Bukkit.getServer().broadcastMessage("svaret var: " + mathResult);
     }
 
     public void start() {
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        Bukkit.getServer().getPluginManager().registerEvents(this, JavaPlugin.getProvidingPlugin(getClass()));
         newSolution();
     }
 
     public void stop() {
-        plugin.getServer().broadcastMessage("MathEvent stopped");
+        Bukkit.getServer().broadcastMessage("MathEvent stopped");
         cancel();
     }
 
@@ -230,6 +221,11 @@ public class MathEvent extends BukkitRunnable implements IEvent {
             cooldown.cancel();
         }
         super.cancel();
+    }
+
+    @Override
+    public int getCooldownTime() {
+        return 10;
     }
 
     public enum Level {

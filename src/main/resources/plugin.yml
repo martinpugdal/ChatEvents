@@ -5,10 +5,3 @@ load: STARTUP
 softdepend: [CoinSystem]
 authors: [MartinErSej]
 description: Chat events like scramble and type it first
-commands:
-  typeitfirstevent:
-    aliases: [typeitfirst, typeitfirstevent, typeitfirstevent]
-  scrambleevent:
-    aliases: [scramble, scrambleevent, scrambleevent]
-  mathevent:
-    aliases: [math, mathevent, mathevent]

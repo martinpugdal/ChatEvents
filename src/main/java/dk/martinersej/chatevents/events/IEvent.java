@@ -20,8 +20,6 @@ public interface IEvent extends Listener {
 
     BukkitTask startCountdown();
 
-    void startNextRound();
-
     void start();
 
     void run();
@@ -29,4 +27,6 @@ public interface IEvent extends Listener {
     void stop();
 
     void cancel();
+
+    int getCooldownTime();
 }
