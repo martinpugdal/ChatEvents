@@ -1,6 +1,5 @@
 package dk.martinersej.chatevents.events;
 
-import dk.martinersej.chatevents.ChatEvent;
 import dk.martinersej.chatevents.hooks.CoinsHook;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -141,7 +140,7 @@ public class MathEvent extends BukkitRunnable implements IEvent {
             CharSequence operator = operators.get(random.nextInt(operatorsAmount));
 
             // number is generated here and added.
-            expression.append(random.nextInt(15) + 1);
+            expression.append(random.nextInt(15) + 1); // 1-15
 
             // add an operator here, if its "+", "-", "*" or "/"
             if (i < numberOfNumbers - 1) {
@@ -159,13 +158,15 @@ public class MathEvent extends BukkitRunnable implements IEvent {
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
+        String mathResultWithoutZeroDecimal = mathResult.substring(mathResult.length()-1);
+        Bukkit.broadcastMessage(mathResultWithoutZeroDecimal);
         if (event.getMessage().equalsIgnoreCase(mathResult)) {
             winnerFound(event.getPlayer());
         }
     }
 
     public void winnerFound(Player player) {
-        cooldown.cancel();
+        cancelEvent();
         Bukkit.getServer().broadcastMessage(player.getName() + " gættede tallet!");
         double randomCoins = Math.random() * 75 + 25 * Math.max(level.ordinal(), 1); // 25-100 * level
         CoinsHook.addCoins(player, randomCoins);
@@ -185,7 +186,7 @@ public class MathEvent extends BukkitRunnable implements IEvent {
             @Override
             public void run() {
                 if (time == 0) {
-                    cancel();
+                    cancelEvent();
                     sendNoOneGuessed();
                     return;
                 }
@@ -209,23 +210,29 @@ public class MathEvent extends BukkitRunnable implements IEvent {
         newSolution();
     }
 
-    public void stop() {
-        Bukkit.getServer().broadcastMessage("MathEvent stopped");
-        cancel();
-    }
-
     @Override
-    public synchronized void cancel() throws IllegalStateException {
+    public synchronized void cancelEvent() throws IllegalStateException {
         HandlerList.unregisterAll(this);
         if (cooldown != null) {
             cooldown.cancel();
         }
-        super.cancel();
+        if (isRunning()) {
+            super.cancel();
+        }
     }
 
     @Override
     public int getCooldownTime() {
         return 10;
+    }
+
+    @Override
+    public boolean isRunning() {
+        try {
+            return super.getTaskId() != -1;
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     public enum Level {

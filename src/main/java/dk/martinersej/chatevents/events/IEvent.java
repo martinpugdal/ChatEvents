@@ -24,9 +24,9 @@ public interface IEvent extends Listener {
 
     void run();
 
-    void stop();
-
-    void cancel();
+    void cancelEvent();
 
     int getCooldownTime();
+
+    boolean isRunning();
 }

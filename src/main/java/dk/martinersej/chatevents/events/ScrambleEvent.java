@@ -27,7 +27,8 @@ public class ScrambleEvent extends BukkitRunnable implements IEvent {
             "dig",
             "martin",
             "er",
-            "sej"
+            "sej",
+            "NqcoGrieferMeget"
         ));
         Collections.shuffle(words);
         word = words.get(0);
@@ -46,7 +47,7 @@ public class ScrambleEvent extends BukkitRunnable implements IEvent {
     }
 
     public void winnerFound(Player player) {
-        cooldown.cancel();
+        cancelEvent();
         Bukkit.getServer().broadcastMessage(player.getName() + " gættede ordet!");
         double randomCoins = Math.random() * 75 + 25; // 25-100
         CoinsHook.addCoins(player, randomCoins);
@@ -67,7 +68,7 @@ public class ScrambleEvent extends BukkitRunnable implements IEvent {
             @Override
             public void run() {
                 if (time == 0) {
-                    cancel();
+                    cancelEvent();
                     sendNoOneGuessed();
                     return;
                 }
@@ -101,17 +102,23 @@ public class ScrambleEvent extends BukkitRunnable implements IEvent {
         newWord();
     }
 
-    public void stop() {
-        Bukkit.getServer().broadcastMessage("ScrambleEvent stopped");
-        cancel();
-    }
-
     @Override
-    public synchronized void cancel() throws IllegalStateException {
+    public synchronized void cancelEvent() throws IllegalStateException {
         HandlerList.unregisterAll(this);
         if (cooldown != null) {
             cooldown.cancel();
         }
-        super.cancel();
+        if (isRunning()) {
+            super.cancel();
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        try {
+            return super.getTaskId() != -1;
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 }

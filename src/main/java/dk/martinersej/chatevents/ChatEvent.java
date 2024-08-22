@@ -4,7 +4,6 @@ import dk.martinersej.chatevents.events.IEvent;
 import dk.martinersej.chatevents.events.MathEvent;
 import dk.martinersej.chatevents.events.TypeItFirstEvent;
 import dk.martinersej.chatevents.events.ScrambleEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -34,8 +33,8 @@ public final class ChatEvent extends JavaPlugin {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (event != null) {
-                    event.cancel();
+                if (event != null && event.isRunning()) {
+                    event.cancelEvent(); // should not happen
                 }
                 int random = (int) (Math.random() * 3);
                 switch (random) {
@@ -49,8 +48,9 @@ public final class ChatEvent extends JavaPlugin {
                         event = new MathEvent();
                         break;
                 }
+                event.run();
             }
-        }.runTaskTimer(this, 0, 20 * 15);
+        }.runTaskTimer(this, 20*20, 20*60*15); // 15 minutes
     }
 
     @Override

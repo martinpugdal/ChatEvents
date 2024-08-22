@@ -7,15 +7,12 @@ version = '1.0-SNAPSHOT'
 
 repositories {
     mavenLocal()
-    mavenCentral()
-    maven {
-        name = "jitpack"
-        url = "https://jitpack.io"
-    }
 }
+
 configurations {
     provided
 }
+
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
     compileOnly("dk.martinersej:CoinSystem:1.0-SNAPSHOT")
@@ -35,6 +32,17 @@ tasks.withType(JavaCompile).configureEach {
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         options.release = targetJavaVersion
     }
+}
+
+jar {
+    // Set the destination directory for the JAR file
+    destinationDirectory = file('C:/Users/Martin/Desktop/server/server3_pint/plugins')
+
+    // Optionally, you can customize the JAR file name
+    // archiveName = 'custom.jar'
+
+    // Include additional files or directories in the JAR file if needed
+    // from(source: 'src/main/resources/additional', into: 'additional')
 }
 
 processResources {
